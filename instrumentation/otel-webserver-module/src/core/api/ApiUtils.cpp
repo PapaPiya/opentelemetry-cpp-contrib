@@ -19,6 +19,9 @@
 #include "api/OpentelemetrySdk.h"
 #include "AgentLogger.h"
 #include <api/TenantConfig.h>
+#include <iostream>
+#include <exception>
+#include <filesystem>
 #include <boost/lexical_cast.hpp>
 #ifndef _WIN32
 #include <dlfcn.h>
@@ -40,23 +43,33 @@ OTEL_SDK_STATUS_CODE ApiUtils::init_boilerplate()
 {
     try
     {
-        boost::filesystem::path logConfigPath;
-
-        char* envLogConfigPath = getenv(OTEL_SDK_ENV_LOG_CONFIG_PATH);
+        const char* logConfigPath;
+        const char* envLogConfigPath = std::getenv(OTEL_SDK_ENV_LOG_CONFIG_PATH);
         if(envLogConfigPath)
         {
             logConfigPath = envLogConfigPath;
         }
         else
         {
-            logConfigPath =
-                    getSDKInstallPath()
-                    / boost::filesystem::path("conf")
-                    / boost::filesystem::path("opentelemetry_sdk_log4cxx.xml");
+            if (checkIsAlpine()) {
+                // alpine default path
+                logConfigPath = "/opt/opentelemetry-webserver/agent/conf/appdynamics_sdk_log4cxx.xml";
+            } else {
+                try {
+                    boost::filesystem::path boostLogPath =
+                            getSDKInstallPath()
+                            / boost::filesystem::path("conf")
+                            / boost::filesystem::path("opentelemetry_sdk_log4cxx.xml");
+                    std::string logPath = boostLogPath.string();
+
+                } catch(...) {
+                    logConfigPath = "/opt/opentelemetry-webserver-sdk/conf/appdynamics_sdk_log4cxx.xml";
+                }
+            }
         }
 
         boost::system::error_code ec;
-        if (!boost::filesystem::exists(logConfigPath, ec)) // no throw version of exists()
+        if (!std::filesystem::exists(logConfigPath)) // no throw version of exists()
         {
             std::cerr << (boost::format( "Error: %1%: Invalid logging config file: %2%")
                     % BOOST_CURRENT_FUNCTION % logConfigPath) << std::endl;
@@ -76,7 +89,7 @@ OTEL_SDK_STATUS_CODE ApiUtils::init_boilerplate()
         }
 
         LOG4CXX_INFO(ApiUtils::apiLogger,
-        	"API logger initialized using log configuration file: " << logConfigPath.string());
+        	"API logger initialized using log configuration file: " << logConfigPath);
 
         ApiUtils::apiUserLogger = getLogger(OTEL_LOG_API_USER_LOGGER);
         if(!ApiUtils::apiUserLogger)
@@ -84,16 +97,43 @@ OTEL_SDK_STATUS_CODE ApiUtils::init_boilerplate()
             return OTEL_STATUS(log_init_failed);
         }
         LOG4CXX_INFO(ApiUtils::apiUserLogger,
-        	"API User logger initialized using log configuration file:" << logConfigPath.string());
+        	"API User logger initialized using log configuration file:" << logConfigPath);
 
         std::atexit(cleanup);
     }
-    catch(...)
+    catch(const std::exception& e)
     {
+        std::cerr << "catch exception: " << e.what() << std::endl;
         return OTEL_STATUS(fail);
     }
 
     return OTEL_SUCCESS;
+}
+
+int ApiUtils::checkIsAlpine() {
+    const std::string filename = "/etc/os-release"; // 替换为要读取的文件名
+    const std::string search_string = "Alpine"; // 替换为要查找的字符串
+
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "cannot open: " << filename << std::endl;
+        return 0;
+    }
+
+    std::string line;
+    bool found = false;
+
+    while (std::getline(file, line)) {
+        if (line.find(search_string) != std::string::npos) {
+            found = true;
+            break;
+        }
+    }
+    file.close();
+    if (found) {
+        return 1;
+    }
+    return 0;
 }
 
 boost::filesystem::path ApiUtils::getSDKInstallPath()

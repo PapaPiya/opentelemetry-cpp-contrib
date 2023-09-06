@@ -54,6 +54,7 @@ public:
     static AgentLogger apiUserLogger;
 
     static boost::filesystem::path getSDKInstallPath();
+    static int checkIsAlpine();
     static void cleanup();
     /*
     *   TODO: Following functions will be implemented while doing agent init and term

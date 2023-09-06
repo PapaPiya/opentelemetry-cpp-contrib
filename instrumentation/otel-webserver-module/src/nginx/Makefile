@@ -351,7 +351,7 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/ngx_modules.o \
 	-L/root/webserver-agent/build/linux-x64/opentelemetry-webserver-sdk/sdk_lib/lib -lopentelemetry_webserver_sdk -ldl -lrt -lpthread -lcrypt -lpcre -lz \
 	-Wl,-E
-	
+
 
 
 modules:
@@ -1226,7 +1226,7 @@ objs/addon/nginx/ngx_http_opentelemetry_log.o:	$(ADDON_DEPS) \
 
 
 objs/addon/nginx/ngx_http_opentelemetry_module.o:	$(ADDON_DEPS) \
-	../../src/nginx/ngx_http_opentelemetry_module.c
+	ngx_http_opentelemetry_module.c
 	$(CC) -c -fPIC $(CFLAGS) $(ALL_INCS) \
 		-o objs/addon/nginx/ngx_http_opentelemetry_module.o \
 		../../src/nginx/ngx_http_opentelemetry_module.c
