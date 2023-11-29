@@ -52,27 +52,114 @@ class RequestPayload
 public:
 	void set_http_headers(const std::string& key, const std::string& value)
     {
-        http_headers[key] = value;
+        if (key.empty()) {
+            return;
+        }
+        if (value.empty()) {
+            http_headers[key] = "";
+        } else {
+            http_headers[key] = value;
+        }
     }
     void set_request_headers(const std::string& key, const std::string& value)
     {
-    	request_headers[key] = value;
+        if (key.empty()) {
+            return;
+        }
+        if (value.empty()) {
+            request_headers[key] = "";
+        } else {
+            request_headers[key] = value;
+        }
     }
     void set_attributes(const std::string& key, const std::string& value)
     {
-        attributes[key] = value;
+        if (key.empty()) {
+            return;
+        }
+        if (value.empty()) {
+            attributes[key] = "";
+        } else {
+            attributes[key] = value;
+        }
     }
-    void set_uri(const char* URI) { uri = URI; }
-    void set_request_protocol(const char* requestProtocol) {request_protocol = requestProtocol; }
-    void set_http_get_parameter(const char* httpGetParameter) {http_get_parameter = httpGetParameter; }
-    void set_http_post_parameter(const char* httpPostParameter) {http_post_parameter = httpPostParameter; }
-    void set_http_request_method(const char* httpRequestMethod) {http_request_method = httpRequestMethod; }
-    void set_server_name(const char* serverName) {server_name = serverName; }
-    void set_scheme(const char* aScheme) {scheme = aScheme; }
-    void set_host(const char* aHost) {host = aHost; }
-    void set_target(const char* aTarget) {target = aTarget; }
-    void set_flavor(const char* aflavor) {flavor = aflavor; }
-    void set_client_ip(const char* clientIp) {client_ip = clientIp; }
+    void set_uri(const char* URI) {
+        if (URI == nullptr) {
+            uri = "";
+        } else {
+            uri = URI;
+        }
+    }
+    void set_request_protocol(const char* requestProtocol) {
+        if (requestProtocol == nullptr) {
+            request_protocol = "";
+        } else {
+            request_protocol = requestProtocol;
+        }
+    }
+    void set_http_get_parameter(const char* httpGetParameter) {
+        if (httpGetParameter == nullptr) {
+            http_get_parameter = "";
+        } else {
+            http_get_parameter = httpGetParameter;
+        }
+    }
+    void set_http_post_parameter(const char* httpPostParameter) {
+        if (httpPostParameter == nullptr) {
+            http_post_parameter = "";
+        } else {
+            http_post_parameter = httpPostParameter;
+        }
+    }
+    void set_http_request_method(const char* httpRequestMethod) {
+        if (httpRequestMethod == nullptr) {
+            http_request_method = "";
+        } else {
+            http_request_method = httpRequestMethod;
+        }
+    }
+    void set_server_name(const char* serverName) {
+        if (serverName == nullptr) {
+            server_name = "";
+        } else {
+            server_name = serverName;
+        }
+    }
+    void set_scheme(const char* aScheme) {
+        if (aScheme == nullptr) {
+            scheme = "";
+        } else {
+            scheme = aScheme;
+        }
+    }
+    void set_host(const char* aHost) {
+        if (aHost == nullptr) {
+            host = "";
+        } else {
+            host = aHost;
+        }
+    }
+    void set_target(const char* aTarget) {
+        if (aTarget == nullptr) {
+            target = "";
+        } else {
+            target = aTarget;
+        }
+    }
+    void set_flavor(const char* aflavor) {
+        if (aflavor == nullptr) {
+            flavor = "";
+        } else {
+            flavor = aflavor;
+        }
+    }
+    void set_client_ip(const char* clientIp) {
+        if (clientIp == nullptr) {
+            client_ip = "";
+        } else {
+            client_ip = clientIp;
+        }
+    }
     void set_port(long aPort) {port = aPort; }
 
 

@@ -548,7 +548,7 @@ static ngx_int_t ngx_http_opentelemetry_init(ngx_conf_t *cf)
         ngx_uint_t                   phase_index;
         ngx_int_t                    res;
 
-        ngx_writeError(cf->cycle->log, __func__, "Starting Opentelemetry Module init");
+        // ngx_writeError(cf->cycle->log, __func__, "Starting Opentelemetry Module init");
 
         cp = ap = pap = srp = prp = rp = lp = pcp = 0;
 
@@ -586,7 +586,7 @@ static ngx_int_t ngx_http_opentelemetry_init(ngx_conf_t *cf)
 
         cmcf = (ngx_http_core_main_conf_t*)ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
 
-        ngx_writeError(cf->cycle->log, __func__, "Registering handlers for modules in different phases");
+        // ngx_writeError(cf->cycle->log, __func__, "Registering handlers for modules in different phases");
 
         for (m = 0; cf->cycle->modules[m]; m++) {
             if (cf->cycle->modules[m]->type == NGX_HTTP_MODULE) {
@@ -682,7 +682,7 @@ static ngx_int_t ngx_http_opentelemetry_init(ngx_conf_t *cf)
         /* hostname is extracted from the nginx cycle. The attribute hostname is needed
         for OTEL spec and the only place it is available is cf->cycle
         */
-        ngx_writeError(cf->cycle->log, __func__, "Opentelemetry Module init completed!");
+        // ngx_writeError(cf->cycle->log, __func__, "Opentelemetry Module init completed!");
     } catch(const std::exception& e) {
         ngx_writeError(cf->cycle->log, __func__, "catch exception: %s", e.what());
         return NGX_ERROR;
@@ -1268,22 +1268,20 @@ static void startMonitoringRequest(ngx_http_request_t* r){
         OTEL_SDK_STATUS_CODE res = OTEL_SUCCESS;
         OTEL_SDK_HANDLE_REQ reqHandle = OTEL_SDK_NO_HANDLE;
 
-        const char* wscontext = NULL;
+        const char* wscontext = "opentelemetry_wscontext";
 
         ngx_http_opentelemetry_loc_conf_t  *ngx_conf = (ngx_http_opentelemetry_loc_conf_t*)ngx_http_get_module_loc_conf(r, ngx_http_opentelemetry_module);
 
         if(ngx_conf)
         {
             wscontext = computeContextName(r, ngx_conf);
+        } else {
+            ngx_writeTrace(r->connection->log, __func__, "opentelemetry loc conf not found");
         }
 
         if(wscontext)
         {
             ngx_writeTrace(r->connection->log, __func__, "WebServer Context: %s", wscontext);
-        }
-        else
-        {
-            ngx_writeTrace(r->connection->log, __func__, "Using Default context ");
         }
 
         // Fill the Request payload information and start the request monitoring
@@ -1293,8 +1291,10 @@ static void startMonitoringRequest(ngx_http_request_t* r){
             ngx_writeError(r->connection->log, __func__, "Not able to get memory for request payload");
         }
         fillRequestPayload(req_payload, r);
-        res = startRequest(wscontext, req_payload, &reqHandle);
-
+        //
+        ngx_writeError(r->connection->log, __func__, "-------- try to start request --------- ");
+        res = startRequest(req_payload);
+        ngx_writeError(r->connection->log, __func__, "-------- start request success --------- ");
         if (OTEL_ISSUCCESS(res))
         {
             if (ctx == NULL)
@@ -1314,11 +1314,11 @@ static void startMonitoringRequest(ngx_http_request_t* r){
                     ngx_http_set_ctx(r, ctx, ngx_http_opentelemetry_module);
                 }
             }
-            ngx_writeTrace(r->connection->log, __func__, "Request Monitoring begins successfully ");
+            ngx_writeError(r->connection->log, __func__, "--------  Request Monitoring begins successfully -------");
         }
         else if (res == OTEL_STATUS(cfg_channel_uninitialized) || res == OTEL_STATUS(bt_detection_disabled))
         {
-            ngx_writeTrace(r->connection->log, __func__, "Request begin detection disabled, result code: %d", res);
+            ngx_writeError(r->connection->log, __func__, "Request begin detection disabled, result code: %d", res);
         }
         else
         {
@@ -1769,6 +1769,32 @@ static void fillRequestPayload(request_payload* req_payload, ngx_http_request_t*
     req_payload->request_headers_count = request_headers_idx;
 
     addScriptAttributes(req_payload, r);
+
+    ngx_writeError(r->connection->log, __func__, "-------- uri: %s", req_payload->uri);
+    ngx_writeError(r->connection->log, __func__, "-------- scheme: %s", req_payload->scheme);
+    ngx_writeError(r->connection->log, __func__, "-------- flavor: %s", req_payload->flavor);
+    ngx_writeError(r->connection->log, __func__, "-------- hostname: %s", req_payload->hostname);
+    ngx_writeError(r->connection->log, __func__, "-------- server_name: %s", req_payload->server_name);
+    ngx_writeError(r->connection->log, __func__, "-------- protocol: %s", req_payload->protocol);
+    ngx_writeError(r->connection->log, __func__, "-------- http_post_param: %s", req_payload->http_post_param);
+    ngx_writeError(r->connection->log, __func__, "-------- http_get_param: %s", req_payload->http_get_param);
+    ngx_writeError(r->connection->log, __func__, "-------- client_ip: %s", req_payload->client_ip);
+    ngx_writeError(r->connection->log, __func__, "-------- request_method: %s", req_payload->request_method);
+
+    for(int i=0; i<req_payload->propagation_count; i++){
+        ngx_writeError(r->connection->log, __func__, "-------- propagation_headers header: %s, value: %s",
+                    req_payload->propagation_headers[i].name, req_payload->propagation_headers[i].value);
+    }
+
+    for(int i=0; i<req_payload->attributes_count; i++){
+        ngx_writeError(r->connection->log, __func__, "-------- attributes key: %s, value: %s",
+                req_payload->attributes[i].name, req_payload->attributes[i].value);
+    }
+
+    for (int i = 0; i < req_payload->request_headers_count; i++) {
+        ngx_writeError(r->connection->log, __func__, "-------- request header: %s, value: %s",
+        req_payload->request_headers[i].name, req_payload->request_headers[i].value);
+    }
 }
 
 static void fillResponsePayload(response_payload* res_payload, ngx_http_request_t* r)

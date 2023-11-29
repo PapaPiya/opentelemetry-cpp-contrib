@@ -29,35 +29,71 @@ constexpr char delimiter = ',';
 
 void populatePayload(request_payload* req_payload, void* load)
 {
+    wsAgent.apiFuncLog("start populate payload");
     otel::core::RequestPayload* payload = (otel::core::RequestPayload*)load;
+    wsAgent.apiFuncLog("set payload uri");
     payload->set_uri(req_payload->uri);
+    wsAgent.apiFuncLog("set payload scheme");
     payload->set_scheme(req_payload->scheme);
+    wsAgent.apiFuncLog("set payload flavor");
     payload->set_flavor(req_payload->flavor);
+    wsAgent.apiFuncLog("set payload target");
     payload->set_target(req_payload->uri);
+    wsAgent.apiFuncLog("set payload hostname");
     payload->set_host(req_payload->hostname);
+    wsAgent.apiFuncLog("set payload server_name");
     payload->set_server_name(req_payload->server_name);
+    wsAgent.apiFuncLog("set payload protocol");
     payload->set_request_protocol(req_payload->protocol);
+    wsAgent.apiFuncLog("set payload http_post_param");
     payload->set_http_post_parameter(req_payload->http_post_param);
+    wsAgent.apiFuncLog("set payload http_get_param");
     payload->set_http_get_parameter(req_payload->http_get_param);
+    wsAgent.apiFuncLog("set payload request_method");
     payload->set_http_request_method(req_payload->request_method);
+    wsAgent.apiFuncLog("set payload client_ip");
     payload->set_client_ip(req_payload->client_ip);
-
+    wsAgent.apiFuncLog("set payload propagation_headers");
     for(int i=0; i<req_payload->propagation_count; i++){
-        payload->set_http_headers(req_payload->propagation_headers[i].name, req_payload->propagation_headers[i].value);
+        if (req_payload->propagation_headers[i].name == nullptr) {
+            continue;
+        }
+        std::string key(req_payload->propagation_headers[i].name);
+        if (req_payload->propagation_headers[i].value == nullptr) {
+            payload->set_http_headers(key, "");
+        } else {
+            payload->set_http_headers(key, req_payload->propagation_headers[i].value);
+        }
     }
-
+    wsAgent.apiFuncLog("set payload attributes");
     for(int i=0; i<req_payload->attributes_count; i++){
-        payload->set_attributes(req_payload->attributes[i].name, req_payload->attributes[i].value);
+        if (req_payload->attributes[i].name == nullptr) {
+            continue;
+        }
+        std::string key(req_payload->attributes[i].name);
+        if (req_payload->attributes[i].value == nullptr) {
+            payload->set_attributes(key, "");
+        } else {
+            payload->set_attributes(key, req_payload->attributes[i].value);
+        }
     }
-
+    wsAgent.apiFuncLog("set payload request_headers");
     for (int i = 0; i < req_payload->request_headers_count; i++) {
+        if (req_payload->request_headers[i].name == nullptr) {
+            continue;
+        }
         std::string key(req_payload->request_headers[i].name);
         if (requestHeadersToCapture.find(key)
             != requestHeadersToCapture.end()) {
-            payload->set_request_headers(key,
-                req_payload->request_headers[i].value);
+            if (req_payload->request_headers[i].value == nullptr) {
+                payload->set_request_headers(key, "");
+            } else {
+                payload->set_request_headers(key,
+                    req_payload->request_headers[i].value);
+            }
         }
     }
+    wsAgent.apiFuncLog("start populate payload done");
 }
 
 void setRequestResponseHeaders(const char* request, const char* response)
@@ -65,14 +101,22 @@ void setRequestResponseHeaders(const char* request, const char* response)
     std::string token;
     std::stringstream ss;
 
-    ss.str(std::string(request));
+    if (request == nullptr) {
+        ss.str(std::string(""));
+    } else {
+        ss.str(std::string(request));
+    }
     while(getline(ss, token, delimiter)) {
         requestHeadersToCapture.insert(token);
     }
 
     token.clear();
     ss.clear();
-    ss.str(std::string(response));
+    if (response == nullptr) {
+        ss.str(std::string(""));
+    } else {
+        ss.str(std::string(response));
+    }
     while(getline(ss, token, delimiter)) {
         responseHeadersToCapture.insert(token);
     }
@@ -107,14 +151,14 @@ void opentelemetry_core_term()
     wsAgent.term();
 }
 
-OTEL_SDK_STATUS_CODE startRequest(const char* wscontext, request_payload* req_payload, OTEL_SDK_HANDLE_REQ* reqHandle)
+OTEL_SDK_STATUS_CODE startRequest(request_payload* req_payload)
 {
+    wsAgent.apiFuncLog("start request");
     OTEL_SDK_STATUS_CODE res = OTEL_SUCCESS;
-
     std::unique_ptr<otel::core::RequestPayload> requestPayload(new otel::core::RequestPayload);
     populatePayload(req_payload, requestPayload.get());
-    res = wsAgent.startRequest(wscontext, requestPayload.get(), reqHandle);
-
+    res = wsAgent.startRequest(requestPayload.get());
+    wsAgent.apiFuncLog("start request done");
     return res;
 }
 

@@ -77,7 +77,7 @@ void initDependency();
 void populatePayload(request_payload* req_payload, void* payload);
 void setRequestResponseHeaders(const char* request, const char* response);
 OTEL_SDK_STATUS_CODE opentelemetry_core_init(OTEL_SDK_ENV_RECORD* env, unsigned numberOfRecords, struct cNode *rootCN);
-OTEL_SDK_STATUS_CODE startRequest(const char* wscontext, request_payload* req_payload, OTEL_SDK_HANDLE_REQ* reqHandle);
+OTEL_SDK_STATUS_CODE startRequest(request_payload* req_payload);
 OTEL_SDK_STATUS_CODE startModuleInteraction(OTEL_SDK_HANDLE_REQ req_handle_key, const char* module_name, const char* stage, bool resolveBackends, OTEL_SDK_ENV_RECORD* propagationHeaders, int* ix);
 OTEL_SDK_STATUS_CODE stopModuleInteraction(OTEL_SDK_HANDLE_REQ req_handle_key, const char* backendName, const char* backendType, unsigned int err_code, const char* msg);
 OTEL_SDK_STATUS_CODE endRequest(OTEL_SDK_HANDLE_REQ req_handle_key, const char* errMsg, response_payload* payload);

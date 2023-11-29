@@ -55,10 +55,10 @@ public:
 
     void term();
 
+    void apiFuncLog(const char* errMsg);
+
     OTEL_SDK_STATUS_CODE startRequest(
-        const char* wscontext,
-        RequestPayload* payload,
-        OTEL_SDK_HANDLE_REQ* reqHandle);
+        RequestPayload* payload);
 
     OTEL_SDK_STATUS_CODE endRequest(
         OTEL_SDK_HANDLE_REQ reqHandle,

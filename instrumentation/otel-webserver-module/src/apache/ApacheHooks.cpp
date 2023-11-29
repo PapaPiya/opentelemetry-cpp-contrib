@@ -611,7 +611,7 @@ int ApacheHooks::otel_hook_header_parser_begin(request_rec *r)
     fillRequestPayload(r, requestPayload.get());
 
     // Start Request
-    res = wsAgent.startRequest(wscontext, requestPayload.get(), &reqHandle);
+    res = wsAgent.startRequest(requestPayload.get());
 
     // Store the request data into pool
     if (OTEL_ISSUCCESS(res))

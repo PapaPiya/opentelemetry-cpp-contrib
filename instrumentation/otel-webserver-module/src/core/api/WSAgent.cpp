@@ -40,6 +40,19 @@ inline void apiFuncTraceError(const char* funcName, OTEL_SDK_STATUS_CODE ret)
     }
 }
 
+void WSAgent::apiFuncLog(const char* errMsg) {
+    if(ApiUtils::apiUserLogger)
+    {
+        LOG4CXX_ERROR(ApiUtils::apiUserLogger, "----- ");
+        LOG4CXX_ERROR(ApiUtils::apiUserLogger, "----- " << errMsg);
+    }
+    else
+    {
+        std::cerr << "------ ";
+        std::cerr << "------ " << errMsg << std::endl;
+    }
+}
+
 WSAgent::WSAgent() : initPid(0)
 {}
 
@@ -92,15 +105,22 @@ void WSAgent::term()
 
 OTEL_SDK_STATUS_CODE
 WSAgent::startRequest(
-    const char* wscontext,
-    RequestPayload* requestPayload,
-    OTEL_SDK_HANDLE_REQ* reqHandle)
+    RequestPayload* requestPayload)
 {
-    std::string context {wscontext};
+    std::string context = "opentelemetry_context";
+//    if (wscontext == nullptr) {
+//        LOG4CXX_INFO(ApiUtils::apiUserLogger, "--------- context is empty");
+//    } else {
+//        LOG4CXX_INFO(ApiUtils::apiUserLogger, "--------- context : " << wscontext);
+//        std::string local_context = {wscontext};
+//        context = local_context;
+//    }
+
+    OTEL_SDK_HANDLE_REQ reqHandle = OTEL_SDK_NO_HANDLE;
     auto *engine = mAgentCore->getRequestProcessor(context);
     if (nullptr != engine)
     {
-        return engine->startRequest(context, requestPayload, reqHandle);
+        return engine->startRequest(context, requestPayload, &reqHandle);
     }
 
     return OTEL_STATUS(fail);
